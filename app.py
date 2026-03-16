@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import time
 import openpyxl
@@ -12,11 +13,7 @@ TILEMAP_KEY  = "06fadcaa43886a1b8a3fd81709a1f9723bb3e25d1010554b"
 EXCEL_PATH   = os.path.join(os.path.dirname(__file__), "check_failed.xlsx")
 CACHE_PATH   = os.path.join(os.path.dirname(__file__), "geocache.json")
 
-# 2 Hub NVCT
-HUB_CARRIERS = {
-    "NVCT Hub Di Linh - Lâm Đồng - Child",
-    "NVCT Hub Bảo Lộc_Child",
-}
+HUB_CARRIERS = {"NVCT Hub Di Linh - Lâm Đồng - Child"}
 
 HUB_LOCATIONS = [
     {
@@ -24,14 +21,25 @@ HUB_LOCATIONS = [
         "lat": 11.572849213854973,
         "lng": 108.04066512374126,
     },
-    {
-        "name": "NVCT Hub Bảo Lộc_Child",
-        "lat": 11.541409083328261,
-        "lng": 107.82235962024197,
-    },
 ]
 
+HUB_DI_LINH_LAT = 11.572849213854973
+HUB_DI_LINH_LNG = 108.04066512374126
 
+
+# ── Distance ──────────────────────────────────────────────
+def haversine_km(lat1, lng1, lat2, lng2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(lat1))
+         * math.cos(math.radians(lat2))
+         * math.sin(dlng / 2) ** 2)
+    return round(2 * R * math.asin(math.sqrt(a)), 1)
+
+
+# ── Cache ─────────────────────────────────────────────────
 def load_cache():
     if os.path.exists(CACHE_PATH):
         with open(CACHE_PATH, "r", encoding="utf-8") as f:
@@ -44,12 +52,12 @@ def save_cache(cache):
         json.dump(cache, f, ensure_ascii=False, indent=2)
 
 
+# ── Geocode ───────────────────────────────────────────────
 def geocode_address(address, cache):
     if address in cache:
         return cache[address]
 
     try:
-        # Step 1: search/v3 to get ref_id
         r1 = requests.get(
             "https://maps.vietmap.vn/api/search/v3",
             params={"apikey": SERVICES_KEY, "text": address},
@@ -58,15 +66,13 @@ def geocode_address(address, cache):
         r1.raise_for_status()
         results = r1.json()
         if not isinstance(results, list) or len(results) == 0:
-            print(f"  [WARN] No search result for: {address}")
+            print(f"  [WARN] No search result: {address}")
             return None
 
         ref_id = results[0].get("ref_id")
         if not ref_id:
-            print(f"  [WARN] No ref_id for: {address}")
             return None
 
-        # Step 2: place/v3 to get lat/lng
         r2 = requests.get(
             "https://maps.vietmap.vn/api/place/v3",
             params={"apikey": SERVICES_KEY, "refid": ref_id},
@@ -83,31 +89,31 @@ def geocode_address(address, cache):
             save_cache(cache)
             return coord
 
-        print(f"  [WARN] No coords in place response for: {address}")
     except Exception as e:
-        print(f"  [ERROR] Geocode failed for '{address}': {e}")
+        print(f"  [ERROR] {address}: {e}")
 
     return None
 
 
+# ── Load & deduplicate data ───────────────────────────────
 def load_data():
     wb = openpyxl.load_workbook(EXCEL_PATH)
     ws = wb.active
 
-    # Aggregate: key = (carrier_name, full_address), value = list of total_order_ward
+    # Step 1: aggregate total_order_ward per (full_address, carrier_name)
     agg = {}
     for r in range(2, ws.max_row + 1):
-        carrier = ws.cell(r, 1).value
-        province = ws.cell(r, 3).value
-        district = ws.cell(r, 4).value
-        ward = ws.cell(r, 5).value
-        total_order = ws.cell(r, 6).value
+        carrier      = ws.cell(r, 1).value
+        province     = ws.cell(r, 3).value
+        district     = ws.cell(r, 4).value
+        ward         = ws.cell(r, 5).value
+        total_order  = ws.cell(r, 6).value or 0
         full_address = ws.cell(r, 7).value
 
         if not full_address or not carrier:
             continue
 
-        key = (carrier, full_address)
+        key = (full_address, carrier)
         if key not in agg:
             agg[key] = {
                 "carrier_name": carrier,
@@ -115,23 +121,30 @@ def load_data():
                 "province_name": province,
                 "district_name": district,
                 "ward_name": ward,
-                "orders": [],
+                "total_order_sum": 0,
+                "month_count": 0,
             }
-        if total_order is not None:
-            agg[key]["orders"].append(float(total_order))
+        agg[key]["total_order_sum"] += float(total_order)
+        agg[key]["month_count"] += 1
 
-    return list(agg.values())
+    # Step 2: for each full_address, keep the carrier with highest total_order_sum
+    best = {}
+    for (full_address, carrier), item in agg.items():
+        if full_address not in best or item["total_order_sum"] > best[full_address]["total_order_sum"]:
+            best[full_address] = item
+
+    return list(best.values())
 
 
+# ── Routes ────────────────────────────────────────────────
 @app.route("/api/mapstyle")
 def map_style():
-    """Fetch VietMap style.json and patch glyphs URL to one that has Open Sans fonts."""
+    """Proxy VietMap style.json with patched glyphs URL."""
     r = requests.get(
         f"https://maps.vietmap.vn/api/maps/light/style.json?apikey={TILEMAP_KEY}",
         timeout=10,
     )
     style = r.json()
-    # Replace glyphs URL — OpenMapTiles CDN has Open Sans, Roboto, Noto Sans all available
     style["glyphs"] = "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf"
     return Response(
         json.dumps(style),
@@ -148,45 +161,47 @@ def index():
 @app.route("/api/points")
 def api_points():
     cache = load_cache()
-    rows = load_data()
+    rows  = load_data()
     points = []
 
     for item in rows:
         address = item["full_address"]
-        coord = geocode_address(address, cache)
+        coord   = geocode_address(address, cache)
         if not coord:
-            print(f"  [SKIP] No coord for: {address}")
+            print(f"  [SKIP] {address}")
             continue
 
-        orders = item["orders"]
-        avg_order = round(sum(orders) / len(orders), 1) if orders else 0
-        is_hub = item["carrier_name"] in HUB_CARRIERS
+        avg_order = round(item["total_order_sum"] / item["month_count"], 1)
+        is_hub    = item["carrier_name"] in HUB_CARRIERS
+        distance  = haversine_km(
+            HUB_DI_LINH_LAT, HUB_DI_LINH_LNG,
+            coord["lat"], coord["lng"]
+        )
 
         points.append({
-            "lat": coord["lat"],
-            "lng": coord["lng"],
-            "carrier_name": item["carrier_name"],
-            "full_address": address,
+            "lat":           coord["lat"],
+            "lng":           coord["lng"],
+            "carrier_name":  item["carrier_name"],
+            "full_address":  address,
             "province_name": item["province_name"],
             "district_name": item["district_name"],
-            "ward_name": item["ward_name"],
-            "avg_order": avg_order,
+            "ward_name":     item["ward_name"],
+            "avg_order":     avg_order,
+            "total_order":   item["total_order_sum"],
             "is_hub_carrier": is_hub,
-            "color": "#2563EB" if is_hub else "#DC2626",
+            "distance_km":   distance,
+            "color":         "#2563EB" if is_hub else "#DC2626",
         })
-        time.sleep(0.15)  # Rate limit
+        time.sleep(0.1)
 
-    return jsonify({
-        "points": points,
-        "hubs": HUB_LOCATIONS,
-    })
+    return jsonify({"points": points, "hubs": HUB_LOCATIONS})
 
 
 @app.route("/api/geocode-status")
 def geocode_status():
     cache = load_cache()
-    rows = load_data()
-    total = len(rows)
+    rows  = load_data()
+    total  = len(rows)
     cached = sum(1 for r in rows if r["full_address"] in cache)
     return jsonify({"total": total, "geocoded": cached, "pending": total - cached})
 
