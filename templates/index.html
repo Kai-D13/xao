@@ -36,9 +36,14 @@
     }
     .legend-item { display: flex; align-items: center; gap: 6px; }
     .dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-    .dot-blue { background: #2563EB; }
-    .dot-red  { background: #DC2626; }
-    .dot-hub  { background: #F59E0B; border: 2px solid #fff; }
+    .dot-blue     { background: #2563EB; }
+    .dot-red      { background: #DC2626; }
+    .dot-hub      { background: #F59E0B; border: 2px solid #fff; }
+    .dot-purple   { background: #7C3AED; }
+    .dot-cyan     { background: #0891B2; }
+    .dot-orange   { background: #EA580C; }
+    .dot-green    { background: #16A34A; }
+    .dot-pink     { background: #DB2777; }
 
     #stats-bar {
       background: #1e293b; border: 1px solid #334155;
@@ -159,9 +164,13 @@
   </div>
   <div class="header-right">
     <div class="legend">
-      <div class="legend-item"><div class="dot dot-blue"></div>NVCT Hub Di Linh</div>
+      <div class="legend-item"><div class="dot dot-blue"></div>Di Linh</div>
+      <div class="legend-item"><div class="dot dot-purple"></div>Đà Lạt</div>
+      <div class="legend-item"><div class="dot dot-cyan"></div>Đơn Dương</div>
+      <div class="legend-item"><div class="dot dot-orange"></div>Đức Trọng</div>
+      <div class="legend-item"><div class="dot dot-green"></div>Lạc Dương</div>
+      <div class="legend-item"><div class="dot dot-pink"></div>Lâm Hà 2</div>
       <div class="legend-item"><div class="dot dot-red"></div>3PL</div>
-      <div class="legend-item"><div class="dot dot-hub"></div>Hub location</div>
     </div>
     <div id="stats-bar">
       Tổng: <b id="s-total">–</b> &nbsp;|&nbsp;
@@ -238,26 +247,29 @@ function dotIcon(color, r) {
   });
 }
 
-function hubDotIcon() {
+function hubDotIcon(color) {
   return L.divIcon({
     className: '',
-    html: `<div style="width:24px;height:24px;border-radius:50%;background:#F59E0B;
+    html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};
                 border:3px solid #fff;
-                box-shadow:0 0 0 5px rgba(245,158,11,0.22),0 3px 8px rgba(0,0,0,0.4);"></div>`,
+                box-shadow:0 0 0 5px ${color}38,0 3px 8px rgba(0,0,0,0.4);"></div>`,
     iconSize: [24, 24], iconAnchor: [12, 12],
   });
 }
 
 // ── Popup builder ─────────────────────────────────────────
 function makePopupHTML(pt) {
-  const badge = pt.is_hub_carrier
-    ? '<span class="badge badge-blue">NVCT Hub Di Linh</span>'
-    : '<span class="badge badge-red">3PL</span>';
+  const badgeStyle = pt.is_hub_carrier
+    ? `background:${pt.color}22;color:${pt.color};`
+    : 'background:rgba(220,38,38,0.15);color:#f87171;';
+  const badgeLabel = pt.is_hub_carrier ? pt.carrier_name : '3PL';
 
   return `
     <div style="min-width:215px;">
       <div class="p-title">${pt.ward_name}</div>
-      <div class="p-carrier">${pt.carrier_name}&nbsp;${badge}</div>
+      <div class="p-carrier">
+        <span class="badge" style="${badgeStyle}">${badgeLabel}</span>
+      </div>
       <div class="p-stats">
         <div class="p-stat">
           <span class="p-num-blue">${pt.avg_order}</span>
@@ -265,7 +277,7 @@ function makePopupHTML(pt) {
         </div>
         <div class="p-stat">
           <span class="p-num-green">${pt.distance_km}</span>
-          <span class="p-unit">km từ Hub</span>
+          <span class="p-unit">km từ ${pt.hub_name.replace('NVCT Hub ','').replace('_Child','').replace(' - Lâm Đồng','')}</span>
         </div>
       </div>
       <div class="p-addr">${pt.full_address}</div>
@@ -339,7 +351,10 @@ function buildHubList(hubs) {
   hubs.forEach(hub => {
     const div = document.createElement('div');
     div.className = 'hub-card';
-    div.innerHTML = `<div class="hub-card-name">${hub.name}</div>
+    div.style.borderColor = hub.color + '66';
+    div.style.background  = hub.color + '12';
+    div.innerHTML = `
+      <div class="hub-card-name" style="color:${hub.color};">${hub.name}</div>
       <div class="hub-card-coord">${hub.lat.toFixed(5)}, ${hub.lng.toFixed(5)}</div>`;
     div.addEventListener('click', () => map.setView([hub.lat, hub.lng], 13));
     c.appendChild(div);
@@ -366,9 +381,9 @@ async function loadPoints() {
 
     // Hub markers (always visible, above clusters)
     data.hubs.forEach(hub => {
-      L.marker([hub.lat, hub.lng], { icon: hubDotIcon(), zIndexOffset: 1000 })
+      L.marker([hub.lat, hub.lng], { icon: hubDotIcon(hub.color), zIndexOffset: 1000 })
         .bindPopup(`<div>
-          <div class="p-title" style="color:#F59E0B;">🏭 ${hub.name}</div>
+          <div class="p-title" style="color:${hub.color};">🏭 ${hub.name}</div>
           <div class="p-carrier" style="margin-top:6px;">${hub.lat.toFixed(5)}, ${hub.lng.toFixed(5)}</div>
         </div>`)
         .addTo(map);

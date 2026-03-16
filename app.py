@@ -13,18 +13,19 @@ TILEMAP_KEY  = "06fadcaa43886a1b8a3fd81709a1f9723bb3e25d1010554b"
 EXCEL_PATH   = os.path.join(os.path.dirname(__file__), "check_failed.xlsx")
 CACHE_PATH   = os.path.join(os.path.dirname(__file__), "geocache.json")
 
-HUB_CARRIERS = {"NVCT Hub Di Linh - Lâm Đồng - Child"}
-
+# Each hub has a unique color for display
 HUB_LOCATIONS = [
-    {
-        "name": "NVCT Hub Di Linh - Lâm Đồng - Child",
-        "lat": 11.572849213854973,
-        "lng": 108.04066512374126,
-    },
+    {"name": "NVCT Hub Di Linh - Lâm Đồng - Child", "lat": 11.572849213854973,  "lng": 108.04066512374126,  "color": "#2563EB"},
+    {"name": "NVCT Hub Đà Lạt_Child",                "lat": 11.93599567885624,   "lng": 108.42482842374791,  "color": "#7C3AED"},
+    {"name": "NVCT Hub Đơn Dương_Child",             "lat": 11.73959840203151,   "lng": 108.51378346769589,  "color": "#0891B2"},
+    {"name": "NVCT Hub Đức Trọng_Child",             "lat": 11.670667175916764,  "lng": 108.35623347672052,  "color": "#EA580C"},
+    {"name": "NVCT Hub Lạc Dương_Child",             "lat": 11.95187243957892,   "lng": 108.4389962660779,   "color": "#16A34A"},
+    {"name": "NVCT Hub Lâm Hà 2_Child",              "lat": 11.735383953128062,  "lng": 108.20209281526215,  "color": "#DB2777"},
 ]
 
-HUB_DI_LINH_LAT = 11.572849213854973
-HUB_DI_LINH_LNG = 108.04066512374126
+# Map carrier name → hub info for fast lookup
+HUB_BY_NAME = {h["name"]: h for h in HUB_LOCATIONS}
+HUB_CARRIERS = set(HUB_BY_NAME.keys())
 
 
 # ── Distance ──────────────────────────────────────────────
@@ -37,6 +38,11 @@ def haversine_km(lat1, lng1, lat2, lng2):
          * math.cos(math.radians(lat2))
          * math.sin(dlng / 2) ** 2)
     return round(2 * R * math.asin(math.sqrt(a)), 1)
+
+
+def nearest_hub(lat, lng):
+    """Return the closest hub dict to a given coordinate."""
+    return min(HUB_LOCATIONS, key=lambda h: haversine_km(lat, lng, h["lat"], h["lng"]))
 
 
 # ── Cache ─────────────────────────────────────────────────
@@ -176,24 +182,30 @@ def api_points():
 
         avg_order = round(item["total_order_sum"] / item["month_count"], 1)
         is_hub    = item["carrier_name"] in HUB_CARRIERS
-        distance  = haversine_km(
-            HUB_DI_LINH_LAT, HUB_DI_LINH_LNG,
-            coord["lat"], coord["lng"]
-        )
+
+        # Distance: to own hub if NVCT, else to nearest hub
+        if is_hub:
+            hub = HUB_BY_NAME[item["carrier_name"]]
+        else:
+            hub = nearest_hub(coord["lat"], coord["lng"])
+
+        distance = haversine_km(hub["lat"], hub["lng"], coord["lat"], coord["lng"])
+        color     = hub["color"] if is_hub else "#DC2626"
 
         points.append({
-            "lat":           coord["lat"],
-            "lng":           coord["lng"],
-            "carrier_name":  item["carrier_name"],
-            "full_address":  address,
-            "province_name": item["province_name"],
-            "district_name": item["district_name"],
-            "ward_name":     item["ward_name"],
-            "avg_order":     avg_order,
-            "total_order":   item["total_order_sum"],
+            "lat":            coord["lat"],
+            "lng":            coord["lng"],
+            "carrier_name":   item["carrier_name"],
+            "full_address":   address,
+            "province_name":  item["province_name"],
+            "district_name":  item["district_name"],
+            "ward_name":      item["ward_name"],
+            "avg_order":      avg_order,
+            "total_order":    item["total_order_sum"],
             "is_hub_carrier": is_hub,
-            "distance_km":   distance,
-            "color":         "#2563EB" if is_hub else "#DC2626",
+            "hub_name":       hub["name"],
+            "distance_km":    distance,
+            "color":          color,
         })
         time.sleep(0.1)
 
