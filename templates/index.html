@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KTLS Route Mapping</title>
+
+  <!-- MapLibre GL JS (supports VietMap vector tiles) -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f1f5f9;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border-bottom: 1px solid #334155;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .header-left h1 { font-size: 17px; font-weight: 700; color: #f8fafc; }
+    .header-left p  { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+    .header-right   { display: flex; align-items: center; gap: 12px; }
+
+    .legend {
+      display: flex; gap: 14px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 7px 13px;
+      font-size: 12px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .dot {
+      width: 11px; height: 11px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-blue { background: #2563EB; }
+    .dot-red  { background: #DC2626; }
+    .dot-hub  { background: #F59E0B; border: 2px solid #fff; }
+
+    #stats-bar {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 7px 13px;
+      font-size: 12px;
+      color: #94a3b8;
+      display: flex; gap: 6px; align-items: center;
+    }
+    #stats-bar b { color: #f8fafc; }
+
+    /* ── Map ────────────────────────────────────────────── */
+    #map-wrap { flex: 1; position: relative; }
+    #map      { width: 100%; height: 100%; }
+
+    /* ── Loading overlay ─────────────────────────────────── */
+    #loading {
+      position: absolute; inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 100;
+      transition: opacity 0.4s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    .spinner {
+      width: 46px; height: 46px;
+      border: 4px solid #334155;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+      margin-bottom: 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #loading-text    { font-size: 14px; color: #94a3b8; }
+    #loading-progress { font-size: 22px; font-weight: 700; color: #3b82f6; margin-top: 6px; }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    #sidebar {
+      position: absolute;
+      top: 12px; left: 12px;
+      width: 268px;
+      background: rgba(15, 23, 42, 0.93);
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 14px;
+      z-index: 10;
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+    }
+
+    #sidebar h3 {
+      font-size: 11px; font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 9px;
+    }
+
+    .carrier-list { display: flex; flex-direction: column; gap: 4px; }
+    .carrier-item {
+      display: flex; align-items: center; gap: 7px;
+      padding: 4px 6px; border-radius: 5px;
+      cursor: pointer; transition: background 0.12s;
+    }
+    .carrier-item:hover { background: #1e293b; }
+    .carrier-item input { cursor: pointer; accent-color: #3b82f6; }
+    .carrier-item label {
+      font-size: 12px; color: #e2e8f0; cursor: pointer;
+      flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .carrier-count { font-size: 11px; color: #475569; flex-shrink: 0; }
+
+    .divider { border: none; border-top: 1px solid #334155; margin: 10px 0; }
+
+    .hub-card {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: 7px; padding: 8px 10px;
+      margin-bottom: 6px; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .hub-card:hover { background: rgba(245,158,11,0.15); }
+    .hub-card-name  { font-size: 12px; font-weight: 600; color: #F59E0B; }
+    .hub-card-coord { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+    /* ── MapLibre popup override ───────────────────────── */
+    .maplibregl-popup-content {
+      background: #1e293b !important;
+      border: 1px solid #334155 !important;
+      border-radius: 10px !important;
+      padding: 12px 14px !important;
+      color: #f1f5f9 !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+      min-width: 200px;
+    }
+    .maplibregl-popup-tip { border-top-color: #1e293b !important; }
+    .maplibregl-popup-close-button {
+      color: #64748b !important;
+      font-size: 18px !important;
+      padding: 2px 8px !important;
+    }
+
+    .popup-title   { font-size: 14px; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+    .popup-carrier { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+    .popup-order   { display: flex; align-items: baseline; gap: 5px; margin-bottom: 6px; }
+    .popup-num     { font-size: 30px; font-weight: 800; color: #3b82f6; line-height: 1; }
+    .popup-unit    { font-size: 11px; color: #64748b; }
+    .popup-addr    {
+      font-size: 11px; color: #94a3b8;
+      border-top: 1px solid #334155;
+      padding-top: 6px; margin-top: 2px;
+    }
+    .badge {
+      display: inline-block; font-size: 10px; font-weight: 600;
+      padding: 2px 7px; border-radius: 20px; margin-top: 4px;
+    }
+    .badge-blue { background: rgba(37,99,235,0.2); color: #60a5fa; }
+    .badge-red  { background: rgba(220,38,38,0.2);  color: #f87171; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>1PL_XÀO</h1>
+    <p>Trực quan hóa &amp; tối ưu tuyến đường vận chuyển</p>
+  </div>
+  <div class="header-right">
+    <div class="legend">
+      <div class="legend-item"><div class="dot dot-blue"></div>NVCT Hub</div>
+      <div class="legend-item"><div class="dot dot-red"></div>Carrier khác</div>
+      <div class="legend-item"><div class="dot dot-hub"></div>Hub location</div>
+    </div>
+    <div id="stats-bar">
+      Tổng: <b id="s-total">–</b> &nbsp;|&nbsp;
+      NVCT Hub: <b id="s-hub">–</b> &nbsp;|&nbsp;
+      Khác: <b id="s-other">–</b>
+    </div>
+  </div>
+</header>
+
+<div id="map-wrap">
+  <div id="loading">
+    <div class="spinner"></div>
+    <div id="loading-text">Đang geocode địa chỉ &amp; tải dữ liệu...</div>
+    <div id="loading-progress"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="sidebar">
+    <h3>Bộ lọc</h3>
+    <span style="font-size:11px;color:#94a3b8;display:block;margin-bottom:7px;">Nhà vận chuyển</span>
+    <div class="carrier-list" id="carrier-list"></div>
+
+    <hr class="divider" />
+
+    <h3>Hub Locations</h3>
+    <div id="hub-list"></div>
+  </div>
+</div>
+
+<script>
+const TILEMAP_KEY = "{{ tilemap_key }}";
+
+// ── Map ───────────────────────────────────────────────────
+// Correct VietMap style URL: /api/maps/light/style.json
+// NOTE: VietMap vector tiles require VietMap's own GL JS SDK.
+// Using OpenStreetMap raster tiles (fully compatible with MapLibre GL JS).
+// To switch to VietMap tiles, provide the VietMap Web GL JS CDN link.
+const OSM_STYLE = {
+  version: 8,
+  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxzoom: 19,
+    },
+  },
+  layers: [{ id: 'osm-tiles', type: 'raster', source: 'osm' }],
+};
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: OSM_STYLE,
+  center: [107.93, 11.55],
+  zoom: 10,
+  attributionControl: true,
+});
+
+map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left');
+
+// ── State ─────────────────────────────────────────────────
+let allPoints = [];
+let checkedCarriers = new Set();
+
+// ── Helpers ───────────────────────────────────────────────
+function buildGeoJSON(points) {
+  return {
+    type: 'FeatureCollection',
+    features: points
+      .filter(p => checkedCarriers.has(p.carrier_name))
+      .map((p, i) => ({
+        type: 'Feature',
+        id: i,
+        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+        properties: {
+          carrier_name: p.carrier_name,
+          full_address:  p.full_address,
+          ward_name:     p.ward_name,
+          avg_order:     p.avg_order,
+          is_hub:        p.is_hub_carrier ? 1 : 0,
+          color:         p.color,
+          radius:        Math.max(6, Math.min(18, 5 + p.avg_order / 4)),
+        },
+      })),
+  };
+}
+
+function buildHubGeoJSON(hubs) {
+  return {
+    type: 'FeatureCollection',
+    features: hubs.map(h => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [h.lng, h.lat] },
+      properties: { name: h.name, lat: h.lat, lng: h.lng },
+    })),
+  };
+}
+
+// ── Add map layers ────────────────────────────────────────
+function setupLayers(hubs) {
+  // Data points source
+  map.addSource('points', {
+    type: 'geojson',
+    data: buildGeoJSON([]),
+    cluster: true,
+    clusterMaxZoom: 13,
+    clusterRadius: 45,
+  });
+
+  // Cluster circles
+  map.addLayer({
+    id: 'clusters',
+    type: 'circle',
+    source: 'points',
+    filter: ['has', 'point_count'],
+    paint: {
+      'circle-color': '#1e3a5f',
+      'circle-stroke-color': '#3b82f6',
+      'circle-stroke-width': 2,
+      'circle-radius': ['step', ['get', 'point_count'], 18, 5, 24, 20, 32],
+      'circle-opacity': 0.92,
+    },
+  });
+
+  // Cluster count labels
+  map.addLayer({
+    id: 'cluster-count',
+    type: 'symbol',
+    source: 'points',
+    filter: ['has', 'point_count'],
+    layout: {
+      'text-field': '{point_count_abbreviated}',
+      'text-font': ['Open Sans Bold'],
+      'text-size': 13,
+    },
+    paint: { 'text-color': '#f1f5f9' },
+  });
+
+  // Individual unclustered points — colored circles
+  map.addLayer({
+    id: 'unclustered',
+    type: 'circle',
+    source: 'points',
+    filter: ['!', ['has', 'point_count']],
+    paint: {
+      'circle-color': ['get', 'color'],
+      'circle-radius': ['get', 'radius'],
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': 'rgba(255,255,255,0.8)',
+      'circle-opacity': 0.85,
+    },
+  });
+
+  // Hub source
+  map.addSource('hubs', { type: 'geojson', data: buildHubGeoJSON(hubs) });
+
+  map.addLayer({
+    id: 'hub-glow',
+    type: 'circle',
+    source: 'hubs',
+    paint: {
+      'circle-color': '#F59E0B',
+      'circle-radius': 22,
+      'circle-opacity': 0.18,
+    },
+  });
+
+  map.addLayer({
+    id: 'hub-dots',
+    type: 'circle',
+    source: 'hubs',
+    paint: {
+      'circle-color': '#F59E0B',
+      'circle-radius': 11,
+      'circle-stroke-color': '#fff',
+      'circle-stroke-width': 2.5,
+      'circle-opacity': 1,
+    },
+  });
+
+  // ── Popups ────────────────────────────────────────────
+  map.on('click', 'unclustered', e => {
+    const p    = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates.slice();
+    const badge  = p.is_hub
+      ? '<span class="badge badge-blue">NVCT Hub</span>'
+      : '<span class="badge badge-red">Carrier khác</span>';
+
+    new maplibregl.Popup({ offset: 10, maxWidth: '280px' })
+      .setLngLat(coords)
+      .setHTML(`
+        <div class="popup-title">${p.ward_name}</div>
+        <div class="popup-carrier">${p.carrier_name} ${badge}</div>
+        <div class="popup-order">
+          <span class="popup-num">${p.avg_order}</span>
+          <span class="popup-unit">đơn TB / tháng</span>
+        </div>
+        <div class="popup-addr">${p.full_address}</div>
+      `)
+      .addTo(map);
+  });
+
+  map.on('click', 'hub-dots', e => {
+    const p      = e.features[0].properties;
+    const coords = e.features[0].geometry.coordinates.slice();
+    new maplibregl.Popup({ offset: 14, maxWidth: '260px' })
+      .setLngLat(coords)
+      .setHTML(`
+        <div class="popup-title" style="color:#F59E0B;">🏭 ${p.name}</div>
+        <div class="popup-carrier" style="margin-top:6px;">${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</div>
+      `)
+      .addTo(map);
+  });
+
+  // Cursor changes
+  ['unclustered','hub-dots','clusters'].forEach(id => {
+    map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
+  });
+
+  // Click cluster → zoom in
+  map.on('click', 'clusters', e => {
+    const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+    const cid  = features[0].properties.cluster_id;
+    map.getSource('points').getClusterExpansionZoom(cid, (err, zoom) => {
+      if (err) return;
+      map.easeTo({ center: features[0].geometry.coordinates, zoom });
+    });
+  });
+}
+
+// ── Apply carrier filter ──────────────────────────────────
+function applyFilter() {
+  if (!map.getSource('points')) return;
+  map.getSource('points').setData(buildGeoJSON(allPoints));
+
+  const filtered = allPoints.filter(p => checkedCarriers.has(p.carrier_name));
+  const hubCount   = filtered.filter(p => p.is_hub_carrier).length;
+  const otherCount = filtered.length - hubCount;
+  document.getElementById('s-total').textContent = filtered.length;
+  document.getElementById('s-hub').textContent   = hubCount;
+  document.getElementById('s-other').textContent = otherCount;
+}
+
+// ── Build sidebar ─────────────────────────────────────────
+function buildCarrierList(points) {
+  const counts = {};
+  points.forEach(p => { counts[p.carrier_name] = (counts[p.carrier_name] || 0) + 1; });
+
+  const list = document.getElementById('carrier-list');
+  list.innerHTML = '';
+  Object.keys(counts).sort().forEach(carrier => {
+    checkedCarriers.add(carrier);
+    const id  = 'cb_' + Math.random().toString(36).slice(2);
+    const div = document.createElement('div');
+    div.className = 'carrier-item';
+    div.innerHTML = `
+      <input type="checkbox" id="${id}" checked />
+      <label for="${id}">${carrier}</label>
+      <span class="carrier-count">${counts[carrier]}</span>
+    `;
+    div.querySelector('input').addEventListener('change', e => {
+      e.target.checked ? checkedCarriers.add(carrier) : checkedCarriers.delete(carrier);
+      applyFilter();
+    });
+    list.appendChild(div);
+  });
+}
+
+function buildHubList(hubs) {
+  const container = document.getElementById('hub-list');
+  container.innerHTML = '';
+  hubs.forEach(hub => {
+    const div = document.createElement('div');
+    div.className = 'hub-card';
+    div.innerHTML = `
+      <div class="hub-card-name">${hub.name}</div>
+      <div class="hub-card-coord">${hub.lat.toFixed(5)}, ${hub.lng.toFixed(5)}</div>
+    `;
+    div.addEventListener('click', () => {
+      map.flyTo({ center: [hub.lng, hub.lat], zoom: 13, duration: 1000 });
+    });
+    container.appendChild(div);
+  });
+}
+
+// ── Load data ─────────────────────────────────────────────
+async function loadPoints() {
+  const loadingEl  = document.getElementById('loading');
+  const progressEl = document.getElementById('loading-progress');
+
+  const pollId = setInterval(async () => {
+    try {
+      const s = await fetch('/api/geocode-status').then(r => r.json());
+      progressEl.textContent = `${s.geocoded} / ${s.total} địa chỉ đã geocode`;
+    } catch {}
+  }, 1500);
+
+  try {
+    const data = await fetch('/api/points').then(r => r.json());
+    clearInterval(pollId);
+    allPoints = data.points;
+
+    buildCarrierList(allPoints);
+    buildHubList(data.hubs);
+
+    // Wait for map style to load before adding sources/layers
+    const addLayers = () => {
+      setupLayers(data.hubs);
+      applyFilter();
+
+      if (allPoints.length > 0) {
+        const lngs = allPoints.map(p => p.lng);
+        const lats = allPoints.map(p => p.lat);
+        map.fitBounds(
+          [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+          { padding: 60, duration: 800 }
+        );
+      }
+      loadingEl.classList.add('hidden');
+    };
+
+    if (map.isStyleLoaded()) addLayers();
+    else map.once('load', addLayers);
+
+  } catch (err) {
+    clearInterval(pollId);
+    document.getElementById('loading-text').textContent = 'Lỗi: ' + err.message;
+    console.error(err);
+  }
+}
+
+loadPoints();
+</script>
+</body>
+</html>
