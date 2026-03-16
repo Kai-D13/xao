@@ -48,8 +48,11 @@ def load_cache():
 
 
 def save_cache(cache):
-    with open(CACHE_PATH, "w", encoding="utf-8") as f:
-        json.dump(cache, f, ensure_ascii=False, indent=2)
+    try:
+        with open(CACHE_PATH, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass  # Read-only filesystem on Vercel — cache lives in memory only
 
 
 # ── Geocode ───────────────────────────────────────────────

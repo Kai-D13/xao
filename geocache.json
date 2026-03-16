@@ -118,5 +118,233 @@
   "Xã Phước Lộc, Huyện Đạ Huoai, Tỉnh Lâm Đồng": {
     "lat": 11.410716,
     "lng": 107.629832
+  },
+  "Thị trấn Cát Tiên, Huyện Cát Tiên, Tỉnh Lâm Đồng": {
+    "lat": 11.56702,
+    "lng": 107.367785
+  },
+  "Thị trấn Phước Cát, Huyện Cát Tiên, Tỉnh Lâm Đồng": {
+    "lat": 11.577285,
+    "lng": 107.305909
+  },
+  "Xã Gia Viễn, Huyện Cát Tiên, Tỉnh Lâm Đồng": {
+    "lat": 11.634796099999999,
+    "lng": 107.3730563
+  },
+  "Xã Tiên Hoàng, Huyện Cát Tiên, Tỉnh Lâm Đồng": {
+    "lat": 11.561623,
+    "lng": 107.368033
+  },
+  "Xã Quảng Ngãi, Huyện Cát Tiên, Tỉnh Lâm Đồng": {
+    "lat": 11.529382,
+    "lng": 107.397836
+  },
+  "Xã Phước Cát 2, Huyện Cát Tiên, Tỉnh Lâm Đồng": {
+    "lat": 11.683597,
+    "lng": 107.283242
+  },
+  "Thị trấn Di Linh, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.587699,
+    "lng": 108.077357
+  },
+  "Xã Hòa Ninh, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.527416,
+    "lng": 107.933906
+  },
+  "Xã Đinh Lạc, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.61111,
+    "lng": 108.115848
+  },
+  "Xã Hòa Nam, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.455384,
+    "lng": 107.900081
+  },
+  "Xã Hòa Bắc, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.468046,
+    "lng": 107.956616
+  },
+  "Xã Gia Hiệp, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.626485,
+    "lng": 108.176768
+  },
+  "Xã Đinh Trang Hòa, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.536207,
+    "lng": 107.961219
+  },
+  "Xã Tân Châu, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.601501,
+    "lng": 108.04553
+  },
+  "Xã Tân Lâm, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.662733,
+    "lng": 107.966609
+  },
+  "Xã Liên Đầm, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.574342,
+    "lng": 108.023179
+  },
+  "Xã Đinh Trang Thượng, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.726431,
+    "lng": 107.971107
+  },
+  "Xã Tam Bố, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.61717,
+    "lng": 108.21633
+  },
+  "Xã Bảo Thuận, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.568065,
+    "lng": 108.102031
+  },
+  "Xã Gung Ré, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.550676,
+    "lng": 108.077114
+  },
+  "Xã Hòa Trung, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.502877,
+    "lng": 107.954
+  },
+  "Xã Tân Thượng, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.645517,
+    "lng": 108.021155
+  },
+  "Xã Rô Men, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 12.088518,
+    "lng": 108.192857
+  },
+  "Xã Đạ Rsal, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 12.176797,
+    "lng": 108.134594
+  },
+  "Xã Đạ K' Nàng, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 11.886232,
+    "lng": 108.124866
+  },
+  "Xã Đạ Long, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 12.143903,
+    "lng": 108.278206
+  },
+  "Xã Đạ M' Rong, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 12.168211,
+    "lng": 108.234638
+  },
+  "Xã Phi Liêng, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 11.939276,
+    "lng": 108.136016
+  },
+  "Xã Đạ Tông, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 12.150729,
+    "lng": 108.257627
+  },
+  "Xã Liêng Srônh, Huyện Đam Rông, Tỉnh Lâm Đồng": {
+    "lat": 12.030314,
+    "lng": 108.143346
+  },
+  "Xã Đạ Kho, Huyện Đạ Tẻh, Tỉnh Lâm Đồng": {
+    "lat": 11.494955,
+    "lng": 107.488507
+  },
+  "Thị trấn Đạ Tẻh, Huyện Đạ Tẻh, Tỉnh Lâm Đồng": {
+    "lat": 11.504339,
+    "lng": 107.486691
+  },
+  "Xã Đạ Lây, Huyện Đạ Tẻh, Tỉnh Lâm Đồng": {
+    "lat": 11.510365,
+    "lng": 107.490718
+  },
+  "Xã An Nhơn, Huyện Đạ Tẻh, Tỉnh Lâm Đồng": {
+    "lat": 11.520648,
+    "lng": 107.447985
+  },
+  "Xã Đà Loan, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.571411,
+    "lng": 108.382901
+  },
+  "Xã Tà Năng, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.567922,
+    "lng": 108.444752
+  },
+  "Xã Hiệp An, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.832547,
+    "lng": 108.454942
+  },
+  "Xã Đa Quyn, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.578783,
+    "lng": 108.482369
+  },
+  "Xã Ninh Loan, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.543926,
+    "lng": 108.34314
+  },
+  "Xã Đức Phổ, Huyện Cát Tiên, Tỉnh Lâm Đồng": {
+    "lat": 11.573441599999999,
+    "lng": 107.346448
+  },
+  "Xã Đan Phượng, Huyện Lâm Hà, Tỉnh Lâm Đồng": {
+    "lat": 11.70921,
+    "lng": 108.182682
+  },
+  "Xã Tân Văn, Huyện Lâm Hà, Tỉnh Lâm Đồng": {
+    "lat": 11.789863,
+    "lng": 108.234875
+  },
+  "Xã Phúc Thọ, Huyện Lâm Hà, Tỉnh Lâm Đồng": {
+    "lat": 11.791778,
+    "lng": 108.167918
+  },
+  "Xã Ka Đô, Huyện Đơn Dương, Tỉnh Lâm Đồng": {
+    "lat": 11.757554,
+    "lng": 108.530237
+  },
+  "Xã Mỹ Đức, Huyện Đạ Tẻh, Tỉnh Lâm Đồng": {
+    "lat": 11.580553,
+    "lng": 107.57122
+  },
+  "Xã Quốc Oai, Huyện Đạ Tẻh, Tỉnh Lâm Đồng": {
+    "lat": 11.607974299999999,
+    "lng": 107.5147404
+  },
+  "Thị trấn Liên Nghĩa, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.726199,
+    "lng": 108.376772
+  },
+  "Xã Tân Hội, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.71522,
+    "lng": 108.293103
+  },
+  "Xã Tà Hine, Huyện Đức Trọng, Tỉnh Lâm Đồng": {
+    "lat": 11.588153,
+    "lng": 108.344606
+  },
+  "Phường 1, Thành phố Đà Lạt, Tỉnh Lâm Đồng": {
+    "lat": 11.940603,
+    "lng": 108.435626
+  },
+  "Phường 6, Thành phố Đà Lạt, Tỉnh Lâm Đồng": {
+    "lat": 11.949471,
+    "lng": 108.431793
+  },
+  "Phường 8, Thành phố Đà Lạt, Tỉnh Lâm Đồng": {
+    "lat": 11.961814,
+    "lng": 108.442856
+  },
+  "Xã Xuân Trường, Thành phố Đà Lạt, Tỉnh Lâm Đồng": {
+    "lat": 11.887643,
+    "lng": 108.553075
+  },
+  "Phường 11, Thành phố Đà Lạt, Tỉnh Lâm Đồng": {
+    "lat": 11.946572,
+    "lng": 108.490746
+  },
+  "Phường 9, Thành phố Đà Lạt, Tỉnh Lâm Đồng": {
+    "lat": 11.945777,
+    "lng": 108.457611
+  },
+  "Phường 5, Thành phố Đà Lạt, Tỉnh Lâm Đồng": {
+    "lat": 11.942421,
+    "lng": 108.426062
+  },
+  "Xã Tân Nghĩa, Huyện Di Linh, Tỉnh Lâm Đồng": {
+    "lat": 11.637913,
+    "lng": 108.096777
   }
 }
